@@ -1,9 +1,11 @@
 import random
+import sys
 import pyxel
 
 class Chip8:
-    def __init__(self):
+    def __init__(self, rom_name):
         pyxel.init(64, 32, caption = "Chip-8", fps = 900, scale = 10)
+        pyxel.sound(0).set("c4", 's', '7', 's', 20)
         self.key_map = {
             pyxel.KEY_0: 0x0,
             pyxel.KEY_1: 0x1,
@@ -82,10 +84,10 @@ class Chip8:
             '0x55': self.i_fx55,
             '0x65': self.i_fx65
         }
-        self.reset()
+        self.reset(rom_name)
         pyxel.run(self.update, self.draw)
 
-    def reset(self):
+    def reset(self, rom_name):
         self.memory = [0] * 4096
         self.stack = [0] * 16
         self.pc = 0x200
@@ -96,7 +98,7 @@ class Chip8:
         self.st = 0
         self.draw_flag = False
         self.display = [[0] * 64 for _ in range(32)]
-        self.load_rom()
+        self.load_rom(rom_name)
         self.load_font_set()
 
     def update(self):
@@ -106,6 +108,8 @@ class Chip8:
             self.dt -= 1
         if self.st > 0:
             self.st -= 1
+            if self.st == 0:
+                pyxel.play(0, 0, loop = False)
 
     def draw(self):
         if self.draw_flag:
@@ -122,8 +126,8 @@ class Chip8:
             if(pyxel.btn(key)):
                 return self.key_map[key]
 
-    def load_rom(self):
-        rom = open("PONG2.rom", 'rb')
+    def load_rom(self, rom_name):
+        rom = open(rom_name, 'rb')
         hexdata = rom.read().hex()
         mem_counter = 512
         for i in range(0, len(hexdata), 2):
@@ -362,4 +366,7 @@ class Chip8:
     
 
 if __name__ == "__main__":
-    Chip8()
+    if len(sys.argv) != 2:
+        print("usage: python3 chip8.py romname")
+    else:
+        Chip8(str(sys.argv[1]))
